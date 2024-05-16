@@ -76,9 +76,3 @@ Please do not pick the exact same tables that I have already diagramed. For exam
 	-  ![01_farmers_market_conceptual_model.png](./images/01_farmers_market_conceptual_model.png)
 - The column names can be found in a few spots (DB Schema window in the bottom right, the Database Structure tab in the main window by expanding each table entry, at the top of the Browse Data tab in the main window)
 
-The booth table and vendor_booth_assignments table is having one to many relationship.
-The vendor table and vendor_booth_assignments table is also having one to many relationship.
-The booth table and vendor table is having many to many relationship.
-
-![image](https://github.com/datatoinsights/sql/assets/25420110/7c9e06da-1450-43cf-8ddd-6874e01020d0)
-
