@@ -17,7 +17,9 @@ The `||` values concatenate the columns into strings.
 Edit the appropriate columns -- you're making two edits -- and the NULL rows will be fixed. 
 All the other rows will remain the same.) */
 
-
+SELECT --*,
+product_name || ', ' || coalesce(product_size,'')|| ' (' || coalesce(product_qty_type,'unit') || ')'
+FROM product;
 
 
 --Windowed Functions
@@ -30,11 +32,88 @@ each new market date for each customer, or select only the unique market dates p
 (without purchase details) and number those visits. 
 HINT: One of these approaches uses ROW_NUMBER() and one uses DENSE_RANK(). */
 
+--method1: dense_rank() function will add the counter when there is a change of date, when there's a record for the same date, the counter does not change.
+SELECT *
+,dense_rank() OVER(PARTITION BY customer_id ORDER BY market_date) as number_of_visits
+FROM customer_purchases;
+
+--method2: use DISTINCT to find the unique combination of market_date and customer_id, then use row_number function.
+--when using DISTINCT and ROW_NUMBER fuction in the same clause, there are duplicate dates. By using an extra table x, able to prevent duplicate dates having different counter.
+--Both methods return 2018 records, instead of 4221 records if counting all the duplicate market_date records
+SELECT *, row_number() OVER(PARTITION BY X.customer_id ORDER BY X.market_date) as number_of_visit from 
+(SELECT DISTINCT customer_id, market_date
+FROM customer_purchases) x;
+
 
 /* 2. Reverse the numbering of the query from a part so each customer’s most recent visit is labeled 1, 
 then write another query that uses this one as a subquery (or temp table) and filters the results to 
 only the customer’s most recent visit. */
 
+--DISTINCT function shows distinct combination of 3 columns (market_date, customer_id, number_of_visits), removing all duplicate records with market_date
+SELECT DISTINCT * FROM
+(SELECT market_date, customer_id
+,dense_rank() OVER(PARTITION BY customer_id ORDER BY market_date DESC) as number_of_visits
+FROM customer_purchases) x
+WHERE x.number_of_visits=1
 
 /* 3. Using a COUNT() window function, include a value along with each row of the 
 customer_purchases table that indicates how many different times that customer has purchased that product_id. */
+
+SELECT *
+,COUNT() OVER(PARTITION BY customer_id ORDER BY product_id) as number_of_purchases
+FROM customer_purchases;
+
+
+-- String manipulations
+/* 1. Some product names in the product table have descriptions like "Jar" or "Organic". 
+These are separated from the product name with a hyphen. 
+Create a column using SUBSTR (and a couple of other commands) that captures these, but is otherwise NULL. 
+Remove any trailing or leading whitespaces. Don't just use a case statement for each product! 
+
+| product_name               | description |
+|----------------------------|-------------|
+| Habanero Peppers - Organic | Organic     |
+
+Hint: you might need to use INSTR(product_name,'-') to find the hyphens. INSTR will help split the column. */
+
+SELECT product_name
+,CASE
+	WHEN product_name LIKE '%-%' THEN TRIM(SUBSTR(product_name,INSTR(product_name,'-')+1))
+	ELSE NULL 
+END as description
+FROM product;
+
+/* 2. Filter the query to show any product_size value that contain a number with REGEXP. */
+
+SELECT * 
+FROM product
+WHERE product_size REGEXP '[0-9]';
+
+-- UNION
+/* 1. Using a UNION, write a query that displays the market dates with the highest and lowest total sales.
+
+HINT: There are a possibly a few ways to do this query, but if you're struggling, try the following: 
+1) Create a CTE/Temp Table to find sales values grouped dates; 
+2) Create another CTE/Temp table with a rank windowed function on the previous query to create 
+"best day" and "worst day"; 
+3) Query the second temp table twice, once for the best day, once for the worst day, 
+with a UNION binding them. */
+
+
+SELECT x.market_date, max(x.total_sales)as total_sales, 'max' as type FROM
+(SELECT *, SUM(quantity*cost_to_customer_per_qty) as total_sales 
+FROM customer_purchases
+
+GROUP BY market_date
+ORDER BY total_sales DESC) x
+
+UNION
+
+SELECT y.market_date, min(y.total_sales), 'min' as type FROM
+(SELECT *, SUM(quantity*cost_to_customer_per_qty) as total_sales 
+FROM customer_purchases
+
+GROUP BY market_date
+ORDER BY total_sales DESC) y
+
+
