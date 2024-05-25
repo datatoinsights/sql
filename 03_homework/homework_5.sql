@@ -1,33 +1,3 @@
--- String manipulations
-/* 1. Some product names in the product table have descriptions like "Jar" or "Organic". 
-These are separated from the product name with a hyphen. 
-Create a column using SUBSTR (and a couple of other commands) that captures these, but is otherwise NULL. 
-Remove any trailing or leading whitespaces. Don't just use a case statement for each product! 
-
-| product_name               | description |
-|----------------------------|-------------|
-| Habanero Peppers - Organic | Organic     |
-
-Hint: you might need to use INSTR(product_name,'-') to find the hyphens. INSTR will help split the column. */
-
-
-
-/* 2. Filter the query to show any product_size value that contain a number with REGEXP. */
-
-
-
--- UNION
-/* 1. Using a UNION, write a query that displays the market dates with the highest and lowest total sales.
-
-HINT: There are a possibly a few ways to do this query, but if you're struggling, try the following: 
-1) Create a CTE/Temp Table to find sales values grouped dates; 
-2) Create another CTE/Temp table with a rank windowed function on the previous query to create 
-"best day" and "worst day"; 
-3) Query the second temp table twice, once for the best day, once for the worst day, 
-with a UNION binding them. */
-
-
-
 -- Cross Join
 /*1. Suppose every vendor in the `vendor_inventory` table had 5 of each of their products to sell to **every** 
 customer on record. How much money would each vendor make per product? 
@@ -39,6 +9,20 @@ Think a bit about the row counts: how many distinct vendors, product names are t
 How many customers are there (y). 
 Before your final group by you should have the product of those two queries (x*y).  */
 
+SELECT x.vendor_name,x.product_name,x.original_price, x.quantity,COUNT(c.customer_id)as number_of_customers,SUM(x.quantity*x.original_price) as expected_sales
+FROM
+(SELECT 
+DISTINCT v.vendor_name,p.product_name,vi.original_price, 5 as quantity
+FROM vendor_inventory vi
+JOIN vendor v
+ON vi.vendor_id=v.vendor_id
+JOIN product p
+ON vi.product_id=p.product_id)x
+
+CROSS JOIN
+customer c
+
+GROUP BY vendor_name, product_name;
 
 
 -- INSERT
@@ -47,19 +31,37 @@ This table will contain only products where the `product_qty_type = 'unit'`.
 It should use all of the columns from the product table, as well as a new column for the `CURRENT_TIMESTAMP`.  
 Name the timestamp column `snapshot_timestamp`. */
 
+--DROP TABLE product_units
+--DROP TABLE IF EXISTS temp.product_units;
+CREATE --TEMP 
+TABLE product_units AS
+SELECT *, CURRENT_TIMESTAMP AS snapshot_timestamp 
+FROM product
+WHERE product_qty_type='unit';
 
+SELECT * FROM product_units
 
 /*2. Using `INSERT`, add a new row to the product_units table (with an updated timestamp). 
 This can be any product you desire (e.g. add another record for Apple Pie). */
 
+INSERT INTO product_units
+VALUES ('4','Apple Pie','10"','3','unit',CURRENT_TIMESTAMP);
 
+SELECT * 
+FROM product_units;
 
 -- DELETE
 /* 1. Delete the older record for the whatever product you added. 
 
 HINT: If you don't specify a WHERE clause, you are going to have a bad time.*/
 
+DELETE 
+--SELECT *
+FROM product_units
+WHERE product_name='Apple Pie (additional)';
 
+SELECT *
+FROM product_units;
 
 -- UPDATE
 /* 1.We want to add the current_quantity to the product_units table. 
@@ -77,5 +79,54 @@ Third, SET current_quantity = (...your select statement...), remembering that WH
 Finally, make sure you have a WHERE statement to update the right row, 
 	you'll need to use product_units.product_id to refer to the correct row within the product_units table. 
 When you have all of these components, you can run the update statement. */
+
+
+ALTER TABLE product_units
+ADD current_quantity INT;
+
+--SELECT * FROM product_units;
+
+
+
+CREATE TABLE product_units_new AS
+SELECT p.*, y.quantity
+FROM product_units p
+LEFT JOIN
+(SELECT * FROM
+(SELECT quantity, product_id 
+,rank() OVER(PARTITION BY product_id ORDER BY market_date DESC) AS rank
+FROM vendor_inventory)x
+WHERE x.rank=1) y
+ON p.product_id=y.product_id;
+
+
+
+UPDATE product_units_new
+SET current_quantity = 0
+--SELECT * FROM product_units_new
+WHERE  quantity IS NULL;
+
+--SELECT * FROM product_units_new;
+
+UPDATE product_units_new
+SET current_quantity = quantity
+--SELECT * FROM product_units_new
+WHERE  quantity IS NOT NULL;
+
+--SELECT * FROM product_units_new;
+
+ALTER TABLE product_units_new
+DROP quantity;
+
+--SELECT * FROM product_units_new;
+
+DROP TABLE product_units;
+
+CREATE TABLE product_units AS
+SELECT *
+FROM product_units_new;
+
+SELECT * FROM product_units;
+
 
 
