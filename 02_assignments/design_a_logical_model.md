@@ -5,7 +5,8 @@ Create a logical model for a small bookstore. 📚
 
 At the minimum it should have employee, order, sales, customer, and book entities (tables). Determine sensible column and table design based on what you know about these concepts. Keep it simple, but work out sensible relationships to keep tables reasonably sized. Include a date table. There are several tools online you can use, I'd recommend [_Draw.io_](https://www.drawio.com/) or [_LucidChart_](https://www.lucidchart.com/pages/).
 
-![Bookstore Diagram](https://github.com/datatoinsights/sql/assets/25420110/0c8b2ce3-7a3c-4598-a623-6376428a2520)
+[Bookstore Diagram.drawio.pdf](https://github.com/datatoinsights/sql/files/15500037/Bookstore.Diagram.drawio.pdf)
+
 
 ## Question 2
 We want to create employee shifts, splitting up the day into morning and evening. Add this to the ERD.
@@ -21,9 +22,11 @@ Bonus: Are there privacy implications to this, why or why not?
 ```
 Your answer...
 ```
-![Address Diagram](https://github.com/datatoinsights/sql/assets/25420110/8865ba45-5810-4daf-9705-b57a1066fc4e)
+
 
 Type 1 stores no historical data, Type 2 stores all historical data. The two address tables have been added to the ERD above.
+
+[Address Diagram.drawio.pdf](https://github.com/datatoinsights/sql/files/15500039/Address.Diagram.drawio.pdf)
 
 Regarding privacy, there are two considerations:
 1. Customer consent:
